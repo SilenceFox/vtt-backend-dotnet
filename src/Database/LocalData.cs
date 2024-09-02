@@ -1,39 +1,86 @@
-using System;
-using System.IO;
+using System.Text.Json;
 
 namespace Database
 {
+
+    public struct LogEntry
+    {
+        public string Type { get; }
+        public string Message { get; }
+
+        public LogEntry(string type, string message)
+        {
+            Type = type;
+            Message = message;
+
+        }
+        public string ToJson() => JsonSerializer.Serialize(this);
+    }
+
     public static class LocalData
     {
-	private static string GetRelativePath(string fileName)
-	{
-            String root = AppContext.BaseDirectory;
-            String path = Path.Combine(root, ".database", $"{fileName}.json");
-            return path;
+        public static void SaveLog(string fileName, LogEntry logEntry)
+        {
+            string path = GetFullPath(fileName);
+            EnsureDirectoryExists(path);
+            File.AppendAllText(path, logEntry.ToJson() + "\n");
+            Console.WriteLine($"Log saved at: {path}");
         }
 
-        // Get, Load, Save
-        public static void SaveJson(string fileName, string data)
-	{
-            String path = GetRelativePath(fileName);
-            // Ensure path exist
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        public static void ClearLogs(string fileName)
+        {
+            string path = GetFullPath(fileName);
+            if (File.Exists(path))
+            {
+                File.WriteAllText(path, string.Empty);
+                Console.WriteLine($"Logs cleared at: {path}");
+            }
+        }
 
-            File.AppendAllText(path, data + "\n");
+        public static IEnumerable<LogEntry> LoadLogs(string fileName)
+        {
+            string path = GetFullPath(fileName);
+            if (File.Exists(path))
+            {
+                string[] lines = File.ReadAllLines(path);
+                foreach (string line in lines)
+                {
+                    if (TryParseLogEntry(line, out LogEntry logEntry))
+                    {
+                        yield return logEntry;
+                    }
+                }
+            }
+        }
 
-	    Console.WriteLine($"File saved at: {path}");
+        private static string GetFullPath(string fileName)
+        {
+            string root = AppContext.BaseDirectory;
+            string databaseDirectory = Path.Combine(root, ".database");
+            return Path.Combine(databaseDirectory, $"{fileName}.json");
+        }
 
-	}
+        private static void EnsureDirectoryExists(string path)
+        {
+            string directory = Path.GetDirectoryName(path)!;
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+        }
 
-	public static void ClearJson() // If we choose to delete the "DB"
-	{
-
-	}
-
-	public static void LoadJson()
-	{
-	    //TODO
-	}
-
+        private static bool TryParseLogEntry(string json, out LogEntry logEntry)
+        {
+            try
+            {
+                logEntry = JsonSerializer.Deserialize<LogEntry>(json);
+                return true;
+            }
+            catch
+            {
+                logEntry = default;
+                return false;
+            }
+        }
     }
 }

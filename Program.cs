@@ -27,8 +27,19 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        string humidade = "Pouco úmido";
-        LocalData.SaveJson("teste", humidade);
+	////////////////////////////////////////////////////////////////
+	// Testing the "Database" Operations, development only	      //
+	////////////////////////////////////////////////////////////////
+
+	// using Database <--- From this module 
+        LogEntry smolLog = new LogEntry("thisIsAType", "Very Important Message");
+        LocalData.SaveLog("file1", smolLog);
+        LocalData.SaveLog("file2", smolLog);
+        LocalData.SaveLog("file2", smolLog);
+
+	////////////////////////////////////////////////////////////////
+						     ////// END	      //
+							////////////////
 
         var summaries = new[]
         {
